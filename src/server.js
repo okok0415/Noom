@@ -1,34 +1,54 @@
 import http from "http";
-import WebSocket from "ws";
+import socketIO from "socket.io";
 import express from "express";
 
 const app = express();
 
-console.log("Hello");
 app.set("view engine", "pug");
 app.set("views", __dirname + "/views");
-app.use("/public", express.static(__dirname + "/public"))
-app.get("/", (req, res) => res.render("home"));
-app.get("/", (req, res) => res.render("home"));
+app.use("/public", express.static(__dirname + "/public"));
+app.get("/", (_, res) => res.render("home"));
 
 
-const handleListen = () => console.log(`Listening on http://localhost:3000/`)
-// Http와 Websocket을 동시에 만족하기 위해
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+
 const server = http.createServer(app);
+const io = socketIO(server);
+
+io.on("connection", socket => {
+    socket.on("room", (roomName, done) => {
+        console.log(roomName);
+        setTimeout(() => {
+            done("hello from the backend");
+        }, 5000)
+    });
+})
+/* 
+
 const wss = new WebSocket.Server({ server });
 
-/*
-function handleConnection(socket) {
-    console.log(socket);
+function onSocketClose() {
+    console.log("Disconnected from the Browser ❌");
 }
-*/
+
+const sockets = [];
+
 wss.on("connection", (socket) => {
+    sockets.push(socket);
+    socket["nickname"] = "Anon";
     console.log("Connected to Browser ✅");
-    socket.on("close", () => console.log("Disconnected from the Browser ❌"));
-    socket.on("message", (message) => {
-        console.log(message);
+    socket.on("close", onSocketClose);
+    socket.on("message", (msg) => {
+        const message = JSON.parse(msg);
+        switch (message.type) {
+            case "new_message":
+                sockets.forEach((aSocket) =>
+                    aSocket.send(`${socket.nickname}: ${message.payload}`)
+                );
+            case "nickname":
+                socket["nickname"] = message.payload;
+        }
     });
-    socket.send("hello!!!");
-});
+}); */
 
 server.listen(3000, handleListen);
